@@ -3,6 +3,7 @@
 //
 
 #include "histogram_eq.h"
+#include <omp.h>
 
 namespace cp {
     constexpr auto HISTOGRAM_LENGTH = 256;
@@ -30,10 +31,12 @@ namespace cp {
         constexpr auto channels = 3;
         const auto size = width * height;
         const auto size_channels = size * channels;
-
+        
+        #pragma omp parallel for
         for (int i = 0; i < size_channels; i++)
             uchar_image[i] = (unsigned char) (255 * input_image_data[i]);
-
+        
+        #pragma omp parallel for collapse(2)
         for (int i = 0; i < height; i++)
             for (int j = 0; j < width; j++) {
                 auto idx = i * width + j;
@@ -44,7 +47,9 @@ namespace cp {
             }
 
         std::fill(histogram, histogram + HISTOGRAM_LENGTH, 0);
+        #pragma omp parallel for
         for (int i = 0; i < size; i++)
+            #pragma omp atomic
             histogram[gray_image[i]]++;
 
         cdf[0] = prob(histogram[0], size);
@@ -55,9 +60,11 @@ namespace cp {
         for (int i = 1; i < HISTOGRAM_LENGTH; i++)
             cdf_min = std::min(cdf_min, cdf[i]);
 
+        #pragma omp parallel for
         for (int i = 0; i < size_channels; i++)
             uchar_image[i] = correct_color(cdf[uchar_image[i]], cdf_min);
 
+        #pragma omp parallel for
         for (int i = 0; i < size_channels; i++)
             output_image_data[i] = static_cast<float>(uchar_image[i]) / 255.0f;
     }
