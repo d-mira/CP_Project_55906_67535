@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
         wbImage_t outputImage = cp::iterative_histogram_equalization(inputImage, n_iterations);
         wbExport(argv[3], outputImage);
     }else if (std::string(PROJECT_NAME) == "project_par") {
-        wbImage_t outputImage = cp::iterative_histogram_equalization_par(inputImage, n_iterations);
+        wbImage_t outputImage = cp_par::iterative_histogram_equalization_par(inputImage, n_iterations);
         wbExport(argv[3], outputImage);
     }
     #endif

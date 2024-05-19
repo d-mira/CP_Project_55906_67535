@@ -8,7 +8,7 @@
 
 #include "wb.h"
 
-namespace cp {
+namespace cp_par {
     wbImage_t iterative_histogram_equalization_par(wbImage_t &input_image, int iterations = 1);
 }
 
