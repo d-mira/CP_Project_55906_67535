@@ -3,6 +3,7 @@
 //
 
 #include "histogram_eq.h"
+#include <omp.h>
 
 namespace cp {
     constexpr auto HISTOGRAM_LENGTH = 256;
@@ -19,21 +20,23 @@ namespace cp {
         return clamp(static_cast<unsigned char>(255 * (cdf_val - cdf_min) / (1 - cdf_min)));
     }
 
-    static void histogram_equalization(const int width, const int height,
-                                           const float *input_image_data,
-                                           float *output_image_data,
-                                           const std::shared_ptr<unsigned char[]> &uchar_image,
-                                           const std::shared_ptr<unsigned char[]> &gray_image,
-                                           int (&histogram)[HISTOGRAM_LENGTH],
-                                           float (&cdf)[HISTOGRAM_LENGTH]) {
+    static void histogram_equalization_par(const int width, const int height,
+                                       const float *input_image_data,
+                                       float *output_image_data,
+                                       const std::shared_ptr<unsigned char[]> &uchar_image,
+                                       const std::shared_ptr<unsigned char[]> &gray_image,
+                                       int (&histogram)[HISTOGRAM_LENGTH],
+                                       float (&cdf)[HISTOGRAM_LENGTH]) {
 
         constexpr auto channels = 3;
         const auto size = width * height;
         const auto size_channels = size * channels;
-        
+
+        #pragma omp parallel for
         for (int i = 0; i < size_channels; i++)
             uchar_image[i] = (unsigned char) (255 * input_image_data[i]);
-        
+
+        #pragma omp parallel for collapse(2)
         for (int i = 0; i < height; i++)
             for (int j = 0; j < width; j++) {
                 auto idx = i * width + j;
@@ -44,9 +47,9 @@ namespace cp {
             }
 
         std::fill(histogram, histogram + HISTOGRAM_LENGTH, 0);
-
+        #pragma omp parallel for
         for (int i = 0; i < size; i++)
-
+            #pragma omp atomic
             histogram[gray_image[i]]++;
 
         cdf[0] = prob(histogram[0], size);
@@ -57,14 +60,16 @@ namespace cp {
         for (int i = 1; i < HISTOGRAM_LENGTH; i++)
             cdf_min = std::min(cdf_min, cdf[i]);
 
+        #pragma omp parallel for
         for (int i = 0; i < size_channels; i++)
             uchar_image[i] = correct_color(cdf[uchar_image[i]], cdf_min);
 
+        #pragma omp parallel for
         for (int i = 0; i < size_channels; i++)
             output_image_data[i] = static_cast<float>(uchar_image[i]) / 255.0f;
     }
 
-    wbImage_t iterative_histogram_equalization(wbImage_t &input_image, int iterations) {
+    wbImage_t iterative_histogram_equalization_par(wbImage_t &input_image, int iterations) {
 
         const auto width = wbImage_getWidth(input_image);
         const auto height = wbImage_getHeight(input_image);
@@ -83,10 +88,10 @@ namespace cp {
         float cdf[HISTOGRAM_LENGTH];
 
         for (int i = 0; i < iterations; i++) {
-            histogram_equalization(width, height,
-                                       input_image_data, output_image_data,
-                                       uchar_image, gray_image,
-                                       histogram, cdf);
+            histogram_equalization_par(width, height,
+                                   input_image_data, output_image_data,
+                                   uchar_image, gray_image,
+                                   histogram, cdf);
 
             input_image_data = output_image_data;
         }

@@ -20,10 +20,12 @@ find_package(OpenMP REQUIRED)
 
 if(OPENMP_FOUND)
     find_package(OpenMP)
-    add_executable(Project_par
-            src/histogram_eq.cpp
+    add_executable(project_par
+            src/main.cpp
+            src/histogram_eq_par.cpp
     )
-    target_link_libraries(Project_par PUBLIC OpenMP::OpenMP_C stdc++ m)
+    target_compile_definitions(project_par PRIVATE PROJECT_NAME="project_par")
+    target_link_libraries(project_par PUBLIC OpenMP::OpenMP_C stdc++ m)
 else()
     message(FATAL_ERROR "OpenMP not found")
 endif()
@@ -39,7 +41,7 @@ add_executable(project
         src/main.cpp
         src/histogram_eq.cpp
 )
-
+target_compile_definitions(project PRIVATE PROJECT_NAME="project")
 target_link_libraries(project wb)
 
 ##############################################################
