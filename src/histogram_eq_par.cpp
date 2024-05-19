@@ -86,14 +86,18 @@ namespace cp {
 
         int histogram[HISTOGRAM_LENGTH];
         float cdf[HISTOGRAM_LENGTH];
-
+        #pragma omp parallel for
         for (int i = 0; i < iterations; i++) {
             histogram_equalization_par(width, height,
                                    input_image_data, output_image_data,
                                    uchar_image, gray_image,
                                    histogram, cdf);
-
-            input_image_data = output_image_data;
+            // para ter a certeza que a proxima iteracao usa o resultado da anterior
+            #pragma omp barrier
+            #pragma omp single
+            {
+                input_image_data = output_image_data;
+            }
         }
 
         return output_image;
