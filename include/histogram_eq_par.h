@@ -2,8 +2,8 @@
 // Created by Diogo Pinto on 19/05/2024.
 //
 
-#ifndef PROJECT_HISTOGRAM_EQ_PAR_H
-#define PROJECT_HISTOGRAM_EQ_PAR_H
+#ifndef CP_PROJECT_HISTOGRAM_EQ_PAR_H
+#define CP_PROJECT_HISTOGRAM_EQ_PAR_H
 
 
 #include "wb.h"
@@ -13,4 +13,4 @@ namespace cp_par {
 }
 
 
-#endif //PROJECT_HISTOGRAM_EQ_PAR_H
+#endif //CP_PROJECT_HISTOGRAM_EQ_PAR_H
