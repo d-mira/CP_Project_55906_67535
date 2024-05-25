@@ -86,7 +86,9 @@ namespace cp_par {
 
         int histogram[HISTOGRAM_LENGTH];
         float cdf[HISTOGRAM_LENGTH];
-        #pragma omp parallel for
+
+        // o shared talvez faça sentido... (ver depois)
+        #pragma omp parallel for shared(width,height,input_image_data,output_image_data, uchar_image, gray_image,histogram, cdf)
         for (int i = 0; i < iterations; i++) {
             histogram_equalization_par(width, height,
                                    input_image_data, output_image_data,
