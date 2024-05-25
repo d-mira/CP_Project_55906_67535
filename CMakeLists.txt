@@ -31,6 +31,25 @@ else()
     message(FATAL_ERROR "OpenMP not found")
 endif()
 
+###############
+# CUDA
+###############
+
+find_package(CUDA REQUIRED)
+
+if(CUDA_FOUND)
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --std=c++17")
+    include_directories(${CUDA_INCLUDE_DIRS})
+
+    add_executable(project_cuda
+            src/main.cpp
+            src/histogram_eq_cud.cu
+    )
+    target_compile_definitions(project_cuda PRIVATE PROJECT_NAME="project_cuda")
+    target_link_libraries(project_cuda PUBLIC ${CUDA_LIBRARIES} wb)
+else()
+    message(FATAL_ERROR "CUDA not found")
+endif()
 
 ###############
 # project
