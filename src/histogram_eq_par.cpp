@@ -2,10 +2,10 @@
 // Created by herve on 13-04-2024.
 //
 
-#include "histogram_eq_par.h"
+#include "histogram_eq.h"
 #include <omp.h>
 
-namespace cp_par {
+namespace cp::par {
     constexpr auto HISTOGRAM_LENGTH = 256;
 
     static float inline prob(const int x, const int size) {
