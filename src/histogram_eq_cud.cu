@@ -3,7 +3,30 @@
 #include <wb.h>
 
 namespace cp::cub {
-    //TODO - adicionar todas as restantes funções que estão em falta
+
+    __global__ void convert_to_uchar(const float* input_image_data, unsigned char* uchar_image, int size_channels) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if (idx < size_channels) {
+            uchar_image[idx] = static_cast<unsigned char>(255 * input_image_data[idx]);
+        }
+    }
+    __global__ void compute_gray_image(const unsigned char* uchar_image, unsigned char* gray_image, int width, int height) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if (idx < width * height) {
+            int r = uchar_image[3 * idx];
+            int g = uchar_image[3 * idx + 1];
+            int b = uchar_image[3 * idx + 2];
+            gray_image[idx] = static_cast<unsigned char>(0.21 * r + 0.71 * g + 0.07 * b);
+        }
+    }
+    __global__ void uchar_to_float(const unsigned char* uchar_image, float* output_image_data, int size_channels) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if (idx < size_channels) {
+            output_image_data[idx] = static_cast<float>(uchar_image[idx]) / 255.0f;
+        }
+    }
+
+    //TODO - adicionar restantes cuda kernals histogram and cdf calculation e completar histogram_equalization
 
   void histogram_equalization(const int width, const int height,
                                            const float *input_image_data,
