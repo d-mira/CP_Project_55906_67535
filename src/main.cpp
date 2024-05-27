@@ -1,6 +1,5 @@
 
 #include "histogram_eq.h"
-#include "histogram_eq_par.h"
 #include <cstdlib>
 
 int main(int argc, char **argv) {
