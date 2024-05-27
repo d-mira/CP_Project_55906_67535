@@ -3,6 +3,11 @@
 #include <wb.h>
 
 namespace cp::cub {
+    constexpr auto HISTOGRAM_LENGTH = 256;
+
+    static float inline prob(const int x, const int size) {
+        return (float) x / (float) size;
+    }
 
     __global__ void convert_to_uchar(const float* input_image_data, unsigned char* uchar_image, int size_channels) {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -26,35 +31,78 @@ namespace cp::cub {
         }
     }
 
+    __global__ void build_histogram(int* histogram, unsigned char* gray_image) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+        std::fill(histogram, histogram+HISTOGRAM_LENGTH, 0);
+
+        //Race conditions might apply, so maybe need to take care of that here
+
+        if(idx < HISTOGRAM_LENGTH) {
+            histogram[gray_image[idx]]++;
+        }
+    }
+
+    __global__ void cdf_calculation(int* histogram, int size, float* cdf) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+        //TODO: Solve loop dependency
+
+        cdf[0] = prob(histogram[0], size);
+
+    }
+
+    __global__ void min_cdf(float* cdf, float* cdf_min) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        int stride = blockIdx.x * gridDim.x;
+
+        int numThreads = gridDim.x/blockDim.x;
+        float *localMins = new float[numThreads];
+
+        //Each thread will calculate a min value of the values it
+        // got attributed to ("localMin")
+        for(int i = idx; i < HISTOGRAM_LENGTH; i += stride) {
+            localMins[idx] = std::min(localMins[idx], cdf[i]);
+        }
+
+        //TODO: we should wait here for the previous calculation to be done
+
+        //Calculate the total min
+        for(int i = 0; i < numThreads; i++) {
+            cdf_min = std::min(cdf_min, localMins[i]);
+        }
+
+    }
+
     //TODO - adicionar restantes cuda kernals histogram and cdf calculation e completar histogram_equalization
 
-  void histogram_equalization(const int width, const int height,
-                                           const float *input_image_data,
-                                           float *output_image_data,
-                                           const std::shared_ptr<unsigned char[]> &uchar_image,
-                                           const std::shared_ptr<unsigned char[]> &gray_image,
-                                           int (&histogram)[HISTOGRAM_LENGTH],
-                                           float (&cdf)[HISTOGRAM_LENGTH]) {
-  //TODO
-  }
-  
-  wbImage_t iterative_histogram_equalization_cub(wbImage_t &input_image, int iterations){
-      const int width = wbImage_getWidth(input_image);
-      const int height = wbImage_getHeight(input_image);
-      const int size = width * height;
-      const int size_channels = size * 3;
-
-      wbImage_t output_image = wbImage_new(width, height, 3);
-      float* input_image_data = wbImage_getData(input_image);
-      float* output_image_data = wbImage_getData(output_image);
-
-      for (int i = 0; i < iterations; i++) {
-          histogram_equalization_par(width, height, input_image_data, output_image_data);
-          input_image_data = output_image_data;
+      void histogram_equalization(const int width, const int height,
+                                               const float *input_image_data,
+                                               float *output_image_data,
+                                               const std::shared_ptr<unsigned char[]> &uchar_image,
+                                               const std::shared_ptr<unsigned char[]> &gray_image,
+                                               int (&histogram)[HISTOGRAM_LENGTH],
+                                               float (&cdf)[HISTOGRAM_LENGTH]) {
+      //TODO
       }
 
-      return output_image;
-  }
+      wbImage_t iterative_histogram_equalization_cub(wbImage_t &input_image, int iterations){
+          const int width = wbImage_getWidth(input_image);
+          const int height = wbImage_getHeight(input_image);
+          const int size = width * height;
+          const int size_channels = size * 3;
+
+          wbImage_t output_image = wbImage_new(width, height, 3);
+          float* input_image_data = wbImage_getData(input_image);
+          float* output_image_data = wbImage_getData(output_image);
+
+          for (int i = 0; i < iterations; i++) {
+              histogram_equalization_par(width, height, input_image_data, output_image_data);
+              input_image_data = output_image_data;
+          }
+
+          return output_image;
+      }
   } 
      
   
