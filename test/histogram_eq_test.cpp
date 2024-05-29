@@ -1,3 +1,4 @@
+#include <chrono>
 #include <filesystem>
 #include "gtest/gtest.h"
 #include "../include/histogram_eq.h"
@@ -22,8 +23,13 @@ TEST_P(HistogramEqParTest, IterativeHistogramEqualizationPar) {
     GTEST_LOG_(INFO) << "Testing parallelized version for " << params.inputFileName
                      << " with " << params.iterations << " iterations";
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     wbImage_t inputImage = wbImport((DATASET_FOLDER + params.inputFileName).c_str());
     wbImage_t outputImage = cp::par::iterative_histogram_equalization_par(inputImage, params.iterations);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
 
     std::string baseOutputPath = OUTPUT_DATASET_FOLDER + params.outputFileName;
     wbImage_t baseOutput = wbImport(baseOutputPath.c_str());
@@ -31,7 +37,7 @@ TEST_P(HistogramEqParTest, IterativeHistogramEqualizationPar) {
     bool result = wbImage_sameQ(outputImage, baseOutput);
 
     EXPECT_TRUE(result);
-
+    std::cout << "Execution time for " << params.inputFileName << " with " << params.iterations << " iterations: " << elapsed.count() << " milliseconds\n";
     std::cout << "Result: " << std::boolalpha << result << std::endl;
 }
 
