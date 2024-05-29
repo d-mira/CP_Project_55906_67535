@@ -43,13 +43,16 @@ namespace cp::cub {
         }
     }
 
-    __global__ void cdf_calculation(int* histogram, int size, float* cdf) {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    //Pre-calculate an array of prob values, to improve runtime of cdf calculation
+    __global__ void calc_prob_array() {
 
-        //TODO: Solve loop dependency
+    }
 
-        cdf[0] = prob(histogram[0], size);
-
+    //Function calculated iteratively, by a single GPU thread
+    __global__ void cdf_calculation(int* histogram, int size, float* cdf, float* prob) {
+        cdf[0] = prob[0];
+        for (int i = 1; i < HISTOGRAM_LENGTH; i++)
+            cdf[i] = cdf[i - 1] + prob[0];
     }
 
     __global__ void min_cdf(float* cdf, float* cdf_min) {
@@ -65,7 +68,7 @@ namespace cp::cub {
             localMins[idx] = std::min(localMins[idx], cdf[i]);
         }
 
-        //TODO: we should wait here for the previous calculation to be done
+        __syncThreads();
 
         //Calculate the total min
         for(int i = 0; i < numThreads; i++) {
@@ -76,6 +79,8 @@ namespace cp::cub {
 
     //TODO - adicionar restantes cuda kernals histogram and cdf calculation e completar histogram_equalization
 
+    //Should this be "__global__"? if so, do we need to extend the visibility
+    // of its arguments to all threads or is this default behaviour?
       void histogram_equalization(const int width, const int height,
                                                const float *input_image_data,
                                                float *output_image_data,
