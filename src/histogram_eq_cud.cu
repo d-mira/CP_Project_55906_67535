@@ -5,7 +5,7 @@
 namespace cp::cub {
     constexpr auto HISTOGRAM_LENGTH = 256;
 
-    static float inline prob(const int x, const int size) {
+    static float inline calc_prob(const int x, const int size) {
         return (float) x / (float) size;
     }
 
@@ -44,12 +44,16 @@ namespace cp::cub {
     }
 
     //Pre-calculate an array of prob values, to improve runtime of cdf calculation
-    __global__ void calc_prob_array() {
+    __global__ void calc_prob_array(int* histogram, int size, float* prob) {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+        if(idx < HISTOGRAM_LENGTH) {
+            prob[idx] = calc_prob(histogram[idx], size);
+        }
     }
 
     //Function calculated iteratively, by a single GPU thread
-    __global__ void cdf_calculation(int* histogram, int size, float* cdf, float* prob) {
+    __global__ void cdf_calculation(float* cdf, float* prob) {
         cdf[0] = prob[0];
         for (int i = 1; i < HISTOGRAM_LENGTH; i++)
             cdf[i] = cdf[i - 1] + prob[0];
@@ -77,10 +81,9 @@ namespace cp::cub {
 
     }
 
-    //TODO - adicionar restantes cuda kernals histogram and cdf calculation e completar histogram_equalization
+    //TODO - completar histogram_equalization
 
-    //Should this be "__global__"? if so, do we need to extend the visibility
-    // of its arguments to all threads or is this default behaviour?
+
       void histogram_equalization(const int width, const int height,
                                                const float *input_image_data,
                                                float *output_image_data,
@@ -88,7 +91,7 @@ namespace cp::cub {
                                                const std::shared_ptr<unsigned char[]> &gray_image,
                                                int (&histogram)[HISTOGRAM_LENGTH],
                                                float (&cdf)[HISTOGRAM_LENGTH]) {
-      //TODO
+      //TODO - Subdivide image into correctly sized chunks, execute normal method with kernels
       }
 
       wbImage_t iterative_histogram_equalization_cub(wbImage_t &input_image, int iterations){
