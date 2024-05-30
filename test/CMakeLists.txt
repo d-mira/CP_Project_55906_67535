@@ -13,6 +13,7 @@ set (TEST_SOURCES
         histogram_eq_test.cpp
         ../src/histogram_eq.cpp
         ../src/histogram_eq_par.cpp
+        cuda_test_batch.cpp
 )
 
 add_executable(${TEST_TARGET} ${TEST_SOURCES})

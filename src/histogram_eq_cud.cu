@@ -91,13 +91,20 @@ namespace cp::cub {
     //TODO - completar histogram_equalization
 
 
-      void histogram_equalization(const int width, const int height,
+      /*void histogram_equalization_cub(const int width, const int height,
                                                const float *input_image_data,
                                                float *output_image_data,
                                                const std::shared_ptr<unsigned char[]> &uchar_image,
                                                const std::shared_ptr<unsigned char[]> &gray_image,
                                                int (&histogram)[HISTOGRAM_LENGTH],
-                                               float (&cdf)[HISTOGRAM_LENGTH]) {
+                                               float (&cdf)[HISTOGRAM_LENGTH]) {*/
+      void histogram_equalization_cub(const int width, const int height,
+                                      const float *input_image_data,
+                                      float *output_image_data,
+                                      unsigned char* uchar_image,
+                                      unsigned char* gray_image,
+                                      int (&histogram)[HISTOGRAM_LENGTH],
+                                      float (&cdf)[HISTOGRAM_LENGTH]){
 
         int size = width * height;
         int size_channels = size * 3;
@@ -105,7 +112,8 @@ namespace cp::cub {
         float* prob;
         float cdf_min;
 
-        cudaMalloc(&prob, HISTOGRAM_LENGTH*sizeof(float));
+        cudaMalloc((void **)&prob, HISTOGRAM_LENGTH*sizeof(float));
+        cudaMalloc((void *) &cdf_min, sizeof(float));
 
         int numBlocks = (size_channels + THREADS_PER_BLOCK1)/ THREADS_PER_BLOCK;
 
@@ -126,6 +134,7 @@ namespace cp::cub {
         save_to_output<<<numBlocks, THREADS_PER_BLOCK>>>(uchar_image, output_image_data, size_channels);
 
         cudaFree(prob);
+        cudaFree(cdf_min);
       }
 
       wbImage_t iterative_histogram_equalization_cub(wbImage_t &input_image, int iterations){
@@ -134,22 +143,65 @@ namespace cp::cub {
           const int size = width * height;
           const int size_channels = size * 3;
 
+          int d_width, d_height, d_size, d_size_channels;
+
           wbImage_t output_image = wbImage_new(width, height, 3);
           float* input_image_data = wbImage_getData(input_image);
           float* output_image_data = wbImage_getData(output_image);
 
+          float* d_input_image_data;
+          float* d_output_image_data;
+
           std::shared_ptr<unsigned char[]> uchar_image(new unsigned char[size_channels]);
           std::shared_ptr<unsigned char[]> gray_image(new unsigned char[size]);
+
+          unsigned char* d_uchar_image;
+          unsigned char* d_gray_image;
 
           int histogram[HISTOGRAM_LENGTH];
           float cdf[HISTOGRAM_LENGTH];
 
-          //We may need to "cudaMalloc" the variables
+          int* d_histogram;
+          float* d_cdf;
+
+          cudaMalloc((void *)&d_width, sizeof(int));
+          cudaMalloc((void *)&d_height, sizeof(int));
+          cudaMalloc((void *)&d_size, sizeof(int));
+          cudaMalloc((void *)&d_size_channels, sizeof(int));
+          cudaMalloc((void **)&d_input_image_data, size_channels*sizeof(float));
+          cudaMalloc((void **)&d_output_image_data, size_channels*sizeof(float));
+          cudaMalloc((void **)&d_uchar_image, size_channels*sizeof(unsigned char));
+          cudaMalloc((void **)&d_gray_image, size*sizeof(unsigned char));
+          cudaMalloc((void **)&d_histogram, HISTOGRAM_LENGTH*sizeof(int));
+          cudaMalloc((void **)&d_cdf, HISTOGRAM_LENGTH*sizeof(float));
+
+          cudaMemcpy(d_width, width, sizeof(int), cudaMemcpyHostToDevice);
+          cudaMemcpy(d_height, height, sizeof(int), cudaMemcpyHostToDevice);
+          cudaMemcpy(d_size, size, sizeof(int), cudaMemcpyHostToDevice);
+          cudaMemcpy(d_size_channels, size_channels, sizeof(int), cudaMemcpyHostToDevice);
+
+          cudaMemcpy(d_input_image_data, input_image_data, size_channels*sizeof(float), cudaMemcpyHostToDevice);
+          cudaMemcpy(d_output_image_data, output_image_data, size_channels*sizeof(float), cudaMemcpyHostToDevice);
 
           for (int i = 0; i < iterations; i++) {
-              histogram_equalization(width, height, input_image_data, output_image_data);
-              input_image_data = output_image_data;
+              histogram_equalization_cub(d_width, d_height, d_input_image_data, d_output_image_data,
+                                         d_uchar_image, d_gray_image, d_histogram, d_cdf);
+              //input_image_data = output_image_data;
+              d_input_image_data = d_output_image_data;
           }
+
+          cudaMemcpy(output_image_data, d_output_image_data, size_channels*sizeof(float), cudaMemcpyDeviceToHost);
+
+          cudaFree(d_width);
+          cudaFree(d_height);
+          cudaFree(d_size);
+          cudaFree(d_size_channels);
+          cudaFree(d_input_image_data);
+          cudaFree(d_output_image_data);
+          cudaFree(d_uchar_image);
+          cudaFree(d_gray_image);
+          cudaFree(d_histogram);
+          cudaFree(d_cdf);
 
           return output_image;
       }
