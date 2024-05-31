@@ -34,3 +34,7 @@
 
 cmake-build-*
 .idea/
+buidl/
+build-seq/
+build-par/
+build-cub/

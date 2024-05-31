@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
 
-    std::cout << "Execution time: " << elapsed.count();
+    std::cout << "Execution time: " << elapsed.count() << " ms\n";
 
     return 0;
 }
