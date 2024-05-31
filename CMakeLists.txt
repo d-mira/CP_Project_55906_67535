@@ -38,8 +38,10 @@ endif()
 find_package(CUDA REQUIRED)
 
 if(CUDA_FOUND)
+    message("Cuda found")
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --std=c++17")
     include_directories(${CUDA_INCLUDE_DIRS})
+
 
     add_executable(project_cuda
             src/main.cpp

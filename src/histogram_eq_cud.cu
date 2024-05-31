@@ -1,5 +1,5 @@
-#include "histogram_eq_par.h"
-#include <cub/cu.cuh>
+#include "histogram_eq.h"
+#include <cub/cub.cuh>
 #include <wb.h>
 
 #define THREADS_PER_BLOCK 512
