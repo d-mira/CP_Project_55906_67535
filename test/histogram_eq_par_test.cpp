@@ -15,9 +15,9 @@ struct HistogramEqTestParams {
     int iterations;
 };
 
-class HistogramEqTest : public ::testing::TestWithParam<HistogramEqTestParams> {};
+class HistogramEqParTest : public ::testing::TestWithParam<HistogramEqTestParams> {};
 
-TEST_P(HistogramEqTest, IterativeHistogramEqualization) {
+TEST_P(HistogramEqParTest, IterativeHistogramEqualizationPar) {
     HistogramEqTestParams params = GetParam();
 
     GTEST_LOG_(INFO) << "Testing parallelized version for " << params.inputFileName
@@ -26,7 +26,7 @@ TEST_P(HistogramEqTest, IterativeHistogramEqualization) {
     auto start = std::chrono::high_resolution_clock::now();
 
     wbImage_t inputImage = wbImport((DATASET_FOLDER + params.inputFileName).c_str());
-    wbImage_t outputImage = cp::iterative_histogram_equalization(inputImage, params.iterations);
+    wbImage_t outputImage = cp::par::iterative_histogram_equalization_par(inputImage, params.iterations);
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
@@ -35,16 +35,15 @@ TEST_P(HistogramEqTest, IterativeHistogramEqualization) {
     wbImage_t baseOutput = wbImport(baseOutputPath.c_str());
 
     bool result = wbImage_sameQ(outputImage, baseOutput);
-    std::cout << "Testing Execution time of sequential version of " << params.inputFileName <<"\n";
 
-    std::cout << "Execution time for " << params.inputFileName << " with " << params.iterations << " iterations: " << elapsed.count() << " milliseconds\n";
     EXPECT_TRUE(result);
-
+    std::cout << "Execution time for " << params.inputFileName << " with " << params.iterations << " iterations: " << elapsed.count() << " milliseconds\n";
+    std::cout << "Result: " << std::boolalpha << result << std::endl;
 }
 
 INSTANTIATE_TEST_SUITE_P(
     HistogramEqTests,
-    HistogramEqTest,
+    HistogramEqParTest,
     ::testing::Values(
         //HistogramEqTestParams{"input01.ppm", "input01_1.ppm", 1},
         //HistogramEqTestParams{"input01.ppm", "input01_100.ppm", 100},

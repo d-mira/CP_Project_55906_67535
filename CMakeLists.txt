@@ -5,6 +5,14 @@ project(project)
 set(CMAKE_CXX_STANDARD 17)
 
 ###############
+# Options
+###############
+
+option(RUN_SEQUENTIAL "Compile sequential version" OFF)
+option(RUN_PARALLEL "Compile parallel version" OFF)
+option(RUN_CUDA "Compile cuda version" OFF)
+
+###############
 # libWB
 ###############
 
@@ -15,28 +23,32 @@ include_directories(libwb)
 ###############
 # OpenMp
 ###############
-
+if(RUN_PARALLEL)
+    add_definitions(-DRUN_PARALLEL)
 find_package(OpenMP REQUIRED)
-
+    include_directories(include)
 if(OPENMP_FOUND)
     find_package(OpenMP)
     add_executable(project_par
             src/main.cpp
             src/histogram_eq_par.cpp
-    )
+        )
+    target_compile_options(project_par PRIVATE -O2 -ftree-vectorize -fopt-info-vec-optimized)
     target_compile_definitions(project_par PRIVATE PROJECT_NAME="project_par")
-    target_link_libraries(project_par PUBLIC OpenMP::OpenMP_C stdc++ m)
+    target_link_libraries(project_par PUBLIC OpenMP::OpenMP_CXX stdc++ m)
     target_link_libraries(project_par PUBLIC wb)
-else()
-    message(FATAL_ERROR "OpenMP not found")
-endif()
+    else()
+        message(FATAL_ERROR "OpenMP not found")
+    endif()
+
 
 ###############
 # CUDA
 ###############
-
+elseif(RUN_CUDA)
+    add_definitions(-DRUN_CUDA)
 find_package(CUDA REQUIRED)
-
+    include_directories(include)
 if(CUDA_FOUND)
     message("Cuda found")
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --std=c++17")
@@ -53,10 +65,13 @@ else()
     message(FATAL_ERROR "CUDA not found")
 endif()
 
+
+
 ###############
 # project
 ###############
-
+elseif(RUN_SEQUENTIAL)
+    add_definitions(-DRUN_SEQUENTIAL)
 include_directories(include)
 
 add_executable(project
@@ -65,8 +80,11 @@ add_executable(project
 )
 target_compile_definitions(project PRIVATE PROJECT_NAME="project")
 target_link_libraries(project wb)
+else()
+    message(FATAL_ERROR "Either RUN_SEQUENTIAL, RUN_PARALLEL or RUN_CUDA ON")
+endif()
 
-##############################################################
+    ##############################################################
 # Tests
 ##############################################################
 

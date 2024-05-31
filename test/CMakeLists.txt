@@ -9,11 +9,14 @@ target_link_libraries(${TEST_TARGET} ${GTEST_BOTH_LIBRARIES})
 
 set(TEST_TARGET "histogram_eq_test")
 
+find_package(OpenMP REQUIRED)
+
 set (TEST_SOURCES
         histogram_eq_test.cpp
+        histogram_eq_par_test.cpp
         ../src/histogram_eq.cpp
         ../src/histogram_eq_par.cpp
-        cuda_test_batch.cpp
+        #cuda_test_batch.cpp
 )
 
 add_executable(${TEST_TARGET} ${TEST_SOURCES})

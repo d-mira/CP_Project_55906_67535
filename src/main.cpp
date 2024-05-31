@@ -1,7 +1,9 @@
-
+#include <filesystem>
 #include "histogram_eq.h"
 #include <cstdlib>
 #include <chrono>
+#include <omp.h>
+#define OUTPUT_DATASET_FOLDER "../outputDataset/"
 
 int main(int argc, char **argv) {
 
@@ -17,11 +19,51 @@ int main(int argc, char **argv) {
     wbImage_t inputImage = wbImport(argv[1]);
     int n_iterations = static_cast<int>(std::strtol(argv[2], nullptr, 10));
     auto start = std::chrono::high_resolution_clock::now();
-    //wbImage_t outputImage = cp::iterative_histogram_equalization(inputImage, n_iterations);
-    wbImage_t outputImage = cp::par::iterative_histogram_equalization_par(inputImage, n_iterations);
+
+    #ifdef RUN_SEQUENTIAL
+        wbImage_t outputImage_seq = cp::iterative_histogram_equalization(inputImage, n_iterations);
+
+        std::string baseOutputPath = OUTPUT_DATASET_FOLDER + std::string(argv[3]);
+        std::cout << "path: " << baseOutputPath <<"\n";
+        if(std::filesystem::exists(baseOutputPath)) {
+            wbImage_t baseOutput = wbImport(baseOutputPath.c_str());
+            bool result = wbImage_sameQ(outputImage_seq, baseOutput);
+            std::cout << "Result: " << result <<" zero=false one=true\n";
+        }else {
+            wbExport(argv[3], outputImage_seq);
+        }
+    #endif
+
+    #ifdef RUN_PARALLEL
+        wbImage_t outputImage_par = cp::par::iterative_histogram_equalization_par(inputImage, n_iterations);
+
+        std::string baseOutputPath = OUTPUT_DATASET_FOLDER + std::string(argv[3]);
+        std::cout << "path: " << baseOutputPath <<"\n";
+        if(std::filesystem::exists(baseOutputPath)) {
+            wbImage_t baseOutput = wbImport(baseOutputPath.c_str());
+            bool result = wbImage_sameQ(outputImage_par, baseOutput);
+            std::cout << "Result: " << result <<" zero=false one=true\n";
+        }else {
+            wbExport(argv[3], outputImage_par);
+        }
+
+    #endif
+
+    #ifdef RUN_CUDA
+        wbImage_t outputImage_cub = cp::cub::iterative_histogram_equalization_cub(inputImage, n_iterations);
+        std::string baseOutputPath = OUTPUT_DATASET_FOLDER + std::string(argv[3]);
+        std::cout << "path: " << baseOutputPath <<"\n";
+        if(std::filesystem::exists(baseOutputPath)) {
+            wbImage_t baseOutput = wbImport(baseOutputPath.c_str());
+            bool result = wbImage_sameQ(outputImage_cub, baseOutput);
+            std::cout << "Result: " << result <<" zero=false one=true\n";
+        }else {
+            wbExport(argv[3], outputImage_cub);
+        }
+    #endif
+
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
-    wbExport(argv[3], outputImage);
 
     std::cout << "Execution time: " << elapsed.count();
 

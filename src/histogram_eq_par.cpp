@@ -33,8 +33,8 @@ namespace cp::par {
         const auto size_channels = size * channels;
 
         #pragma omp parallel for
-        for (int i = 0; i < size_channels; i++)
-            uchar_image[i] = (unsigned char) (255 * input_image_data[i]);
+            for (int i = 0; i < size_channels; i++)
+                uchar_image[i] = (unsigned char) (255 * input_image_data[i]);
 
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < height; i++)
@@ -88,15 +88,15 @@ namespace cp::par {
         float cdf[HISTOGRAM_LENGTH];
 
         // o shared talvez faça sentido... (ver depois)
-        #pragma omp parallel for shared(width,height,input_image_data,output_image_data, uchar_image, gray_image,histogram, cdf)
+        //#pragma omp parallel for shared(width,height,input_image_data,output_image_data, uchar_image, gray_image,histogram, cdf)
         for (int i = 0; i < iterations; i++) {
             histogram_equalization_par(width, height,
                                    input_image_data, output_image_data,
                                    uchar_image, gray_image,
                                    histogram, cdf);
             // para ter a certeza que a proxima iteracao usa o resultado da anterior
-            #pragma omp barrier
-            #pragma omp single
+            //#pragma omp barrier
+            //#pragma omp single
             {
                 input_image_data = output_image_data;
             }

@@ -48,7 +48,7 @@ INSTANTIATE_TEST_SUITE_P(
                 HistogramEqTestParams{"input01.ppm", "input01_1.ppm", 1},
                 HistogramEqTestParams{"input01.ppm", "input01_100.ppm", 100},
                 HistogramEqTestParams{"input01.ppm", "input01_500.ppm", 500},
-                HistogramEqTestParams{"input01.ppm", "input01_1000.ppm", 1000},
+                HistogramEqTestParams{"input01.pp m", "input01_1000.ppm", 1000},
                 HistogramEqTestParams{"borabora_1.ppm", "borabora_1_1.ppm", 1},
                 HistogramEqTestParams{"borabora_1.ppm", "borabora_1_100.ppm", 100},
                 HistogramEqTestParams{"borabora_1.ppm", "borabora_1_500.ppm", 500},
